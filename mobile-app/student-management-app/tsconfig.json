@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "skipLibCheck": true,
+    "types": [
+      "@react-native-async-storage/async-storage"
+    ]
+  },
+  "extends": "expo/tsconfig.base"
+}
