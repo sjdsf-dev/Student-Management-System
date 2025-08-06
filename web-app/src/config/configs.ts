@@ -1,4 +1,4 @@
-export const API_URL = "/choreo-apis/employee-mgmt-system/backend/v1";
+export const API_URL = "/choreo-apis/student-management-system/backend/v1";
 
 declare global {
   interface Window {

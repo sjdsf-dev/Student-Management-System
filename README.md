@@ -110,11 +110,19 @@ The backend provides RESTful endpoints for:
 
 2. **Dev Portal Access**:
    - After publishing, access the API through the Dev Portal
-   - Go to Applications → SJDSF Portal → Subscriptions
+   - Go to Applications → Application Name → Subscriptions
    - Subscribe to the corresponding backend service
 
 ### Environment Setup
 
+Setup Environmental Variables
+Setup CORS headers
+otp-code
+student-id
+employer-id
+supervisor-id
+
+create connection to backend in the frontend in choreo
 Configure your environment variables for different deployment stages:
 
 - Development
