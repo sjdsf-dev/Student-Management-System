@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Edit, Trash, Plus, Search } from "lucide-react";
+import { Edit, Trash, Plus, Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +50,10 @@ const SupervisorManagement = () => {
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [isFormSubmitted, setIsFormSubmitted] = useState(false);
 
+  // NEW: Loading states for async actions
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
+
   // Supervisor CRUD API
   const {
     getAllSupervisors,
@@ -75,6 +79,7 @@ const SupervisorManagement = () => {
     setIsAddDialogOpen(true);
   };
 
+  // UPDATED: Added loading state management
   const handleSubmitSupervisor = async (e) => {
     e.preventDefault();
     setIsFormSubmitted(true);
@@ -83,6 +88,8 @@ const SupervisorManagement = () => {
       setFormErrors(errors);
       return;
     }
+
+    setIsSubmitting(true);
     const payload = {
       first_name: firstName,
       last_name: lastName,
@@ -97,15 +104,17 @@ const SupervisorManagement = () => {
       }
       const data = await getAllSupervisors();
       setSupervisors(Array.isArray(data) ? data : []);
+      setIsAddDialogOpen(false);
+      setIsEditMode(false);
+      setEditSupervisorId(null);
+      resetForm();
     } catch (err) {
       alert("Failed to save supervisor. See console for details.");
       console.error(err);
+    } finally {
+      setIsSubmitting(false);
+      setIsFormSubmitted(false);
     }
-    setIsFormSubmitted(false);
-    setIsAddDialogOpen(false);
-    setIsEditMode(false);
-    setEditSupervisorId(null);
-    resetForm();
   };
 
   const resetForm = () => {
@@ -162,11 +171,12 @@ const SupervisorManagement = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  // Confirm delete
+  // UPDATED: Added loading state management
   const handleConfirmDeleteSupervisor = async () => {
     if (typeof deleteSupervisorId !== "number" || isNaN(deleteSupervisorId)) {
       return;
     }
+    setIsDeleting(deleteSupervisorId);
     try {
       await deleteSupervisor(deleteSupervisorId);
       const data = await getAllSupervisors();
@@ -176,6 +186,8 @@ const SupervisorManagement = () => {
     } catch (err) {
       alert("Failed to delete supervisor. See console for details.");
       console.error(err);
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -298,21 +310,29 @@ const SupervisorManagement = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
+                            {/* UPDATED: Edit button with disabled state */}
                             <button
                               onClick={() => handleEditSupervisor(item)}
-                              className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                              disabled={isDeleting !== null}
+                              className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Edit supervisor"
                             >
                               <Edit className="h-5 w-5" />
                             </button>
+                            {/* UPDATED: Delete button with loading state */}
                             <button
-                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Delete supervisor"
                               onClick={() =>
                                 handleDeleteSupervisor(item.supervisor_id)
                               }
+                              disabled={isDeleting !== null}
                             >
-                              <Trash className="h-5 w-5" />
+                              {isDeleting === item.supervisor_id ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                              ) : (
+                                <Trash className="h-5 w-5" />
+                              )}
                             </button>
                           </div>
                         </TableCell>
@@ -427,12 +447,22 @@ const SupervisorManagement = () => {
                 )}
               </div>
 
-              {/* Submit button */}
+              {/* UPDATED: Submit button with loading state */}
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-200 py-6 text-lg font-medium"
               >
-                {isEditMode ? "Update Supervisor" : "Add Supervisor"}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isEditMode ? "Updating..." : "Adding..."}
+                  </>
+                ) : isEditMode ? (
+                  "Update Supervisor"
+                ) : (
+                  "Add Supervisor"
+                )}
               </Button>
             </div>
           </form>
@@ -452,14 +482,24 @@ const SupervisorManagement = () => {
             <Button
               variant="outline"
               onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isDeleting !== null}
             >
               Cancel
             </Button>
+            {/* UPDATED: Delete button with loading state */}
             <Button
               variant="destructive"
               onClick={handleConfirmDeleteSupervisor}
+              disabled={isDeleting !== null}
             >
-              Delete
+              {isDeleting !== null ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

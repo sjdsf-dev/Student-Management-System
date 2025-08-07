@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Clock, Users, Smile, Frown, Meh } from "lucide-react";
+import { Clock, Users, Smile, Frown, Meh, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useCardService } from "../api/getCard";
 
@@ -8,6 +8,7 @@ const Dashboard = () => {
   const { getCards } = useCardService();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -17,8 +18,18 @@ const Dashboard = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  // Sort employees by mood priority: sad > neutral > happy
-  const sortedEmployees = [...employees].sort((a, b) => {
+  // Filter employees based on search query
+  const filteredEmployees = employees.filter((employee) => {
+    const fullName =
+      `${employee.first_name} ${employee.last_name}`.toLowerCase();
+    const employeeId = String(employee.student_id).toLowerCase();
+    const query = searchQuery.toLowerCase();
+
+    return fullName.includes(query) || employeeId.includes(query);
+  });
+
+  // Sort the filtered employees by mood priority: sad > neutral > happy
+  const sortedEmployees = [...filteredEmployees].sort((a, b) => {
     const moodPriority = { sad: 1, neutral: 2, happy: 3 };
     return (moodPriority[a.emotion] || 4) - (moodPriority[b.emotion] || 4);
   });
@@ -108,7 +119,19 @@ const Dashboard = () => {
               <h2 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">
                 Employee Dashboard
               </h2>
-              {/* Optionally add search/filter here */}
+              {/* Search Bar */}
+              <div className="relative w-full md:w-80">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="block w-full rounded-md border-gray-300 pl-10 pr-4 py-2 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm sm:text-sm"
+                  placeholder="Search by name or ID"
+                />
+              </div>
             </div>
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -201,6 +224,14 @@ const Dashboard = () => {
                 );
               })}
             </div>
+            {/* Display message when no results are found */}
+            {sortedEmployees.length === 0 && searchQuery && (
+              <div className="flex items-center justify-center p-8 bg-white rounded-xl shadow-sm border border-gray-100 mt-6">
+                <p className="text-gray-500 text-lg font-medium">
+                  No employees found matching "{searchQuery}".
+                </p>
+              </div>
+            )}
           </div>
         </main>
       </div>
@@ -208,6 +239,7 @@ const Dashboard = () => {
   );
 };
 
+// EmployeeCard component remains unchanged
 function EmployeeCard({ employee }) {
   const navigate = useNavigate();
 

@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: Employee Management API
+  title: Student Management API
   description: API for managing employees
   version: 1.0.0
 servers:
@@ -1028,7 +1028,7 @@ paths:
       security: []
       x-wso2-disable-security: true
       responses:
-        '200':
+        "200":
           description: Emergency contact found
           content:
             application/json:
@@ -1037,7 +1037,7 @@ paths:
                 properties:
                   phone_number:
                     type: string
-        '404':
+        "404":
           description: No emergency contact found
           content:
             application/json:
@@ -1046,7 +1046,7 @@ paths:
                 properties:
                   error:
                     type: string
-        '500':
+        "500":
           description: Server error
           content:
             application/json:
@@ -1073,7 +1073,7 @@ paths:
               required:
                 - phone_number
       responses:
-        '200':
+        "200":
           description: Emergency contact updated
           content:
             application/json:
@@ -1084,7 +1084,7 @@ paths:
                     type: string
                   phone_number:
                     type: string
-        '400':
+        "400":
           description: Invalid input
           content:
             application/json:
@@ -1093,7 +1093,7 @@ paths:
                 properties:
                   error:
                     type: string
-        '500':
+        "500":
           description: Server error
           content:
             application/json:

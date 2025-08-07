@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Edit, UserCog, Upload, Plus, Key, Trash } from "lucide-react";
+import { Search, Edit, Plus, Key, Trash, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,17 +48,12 @@ const StudentManagement = () => {
   const [lastName, setLastName] = useState("");
   const [dob, setDob] = useState(""); // YYYY-MM-DD
   const [gender, setGender] = useState("");
-  const [addressLine1, setAddressLine1] = useState("");
-  const [addressLine2, setAddressLine2] = useState("");
-  const [city, setCity] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [contactNumberGuardian, setContactNumberGuardian] = useState("");
   const [supervisorId, setSupervisorId] = useState<string | undefined>(
     undefined
   );
   const [remarks, setRemarks] = useState("");
-  const [homeLong, setHomeLong] = useState("");
-  const [homeLat, setHomeLat] = useState("");
   const [employerId, setEmployerId] = useState<string | undefined>(undefined);
   const [checkInTime, setCheckInTime] = useState(""); // HH:MM
   const [checkOutTime, setCheckOutTime] = useState(""); // HH:MM
@@ -85,9 +80,11 @@ const StudentManagement = () => {
   const [otpDialogOpen, setOtpDialogOpen] = useState(false);
   const [otpResult, setOtpResult] = useState<null | {
     otp?: string;
+    otp_code?: string;
+    student_id?: string | number;
+    expires_at?: string;
     [key: string]: any;
   }>(null);
-  const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState<string | null>(null);
 
   // Edit dialog state
@@ -100,6 +97,14 @@ const StudentManagement = () => {
   // Form validation state
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [isFormSubmitted, setIsFormSubmitted] = useState(false);
+
+  // NEW: Loading states for async actions
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
+  const [otpLoadingId, setOtpLoadingId] = useState<number | null>(null);
+
+  // Create a ref for the form element
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -117,7 +122,7 @@ const StudentManagement = () => {
       .catch(() => setSupervisorOptions([]));
   }, []);
 
-  const handleViewStudent = (id) => {
+  const handleViewStudent = (id: number) => {
     navigate(`/student/${id}`);
   };
 
@@ -129,33 +134,39 @@ const StudentManagement = () => {
     setIsAddDialogOpen(true);
   };
 
-  const handleSubmitStudent = async (e) => {
+  // UPDATED: Added loading state management
+  const handleSubmitStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsFormSubmitted(true); // mark form as submitted
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
+
+      if (formRef.current) {
+        formRef.current.scrollIntoView({ behavior: "smooth" });
+      }
       return;
     }
 
-    const formatTime = (time) => (time ? `${time}:00` : null);
+    setIsSubmitting(true);
+    const formatTime = (time: string) => (time ? `${time}:00` : null);
     const payload = {
       first_name: firstName,
       last_name: lastName || null,
       dob: dob ? new Date(dob).toISOString() : null, // keep as string (YYYY-MM-DD)
       gender: gender || null,
-      address_line1: addressLine1 || null,
-      address_line2: addressLine2 || null,
-      city: city || null,
       contact_number: contactNumber || null,
       contact_number_guardian: contactNumberGuardian || null,
       supervisor_id: supervisorId ? Number(supervisorId) : null,
       remarks: remarks || null,
-      home_long: homeLong ? parseFloat(homeLong) : null,
-      home_lat: homeLat ? parseFloat(homeLat) : null,
       employer_id: employerId ? Number(employerId) : null,
       check_in_time: formatTime(checkInTime), // append :00 if present
       check_out_time: formatTime(checkOutTime), // append :00 if present
+      address_line1: "",
+      address_line2: "",
+      city: "",
+      home_long: 0,
+      home_lat: 0,
     };
     try {
       if (isEditMode && editStudentId) {
@@ -169,6 +180,10 @@ const StudentManagement = () => {
       // Refresh management table after adding/updating a student
       const data = await getManagementTable();
       setManagementData(Array.isArray(data) ? data : []);
+      setIsAddDialogOpen(false);
+      setIsEditMode(false);
+      setEditStudentId(null);
+      resetForm();
     } catch (err) {
       console.error(
         `Failed to ${isEditMode ? "update" : "create"} student`,
@@ -179,12 +194,10 @@ const StudentManagement = () => {
           isEditMode ? "update" : "create"
         } student. See console for details.`
       );
+    } finally {
+      setIsSubmitting(false);
+      setIsFormSubmitted(false); // reset after successful submit
     }
-    setIsFormSubmitted(false); // reset after successful submit
-    setIsAddDialogOpen(false);
-    setIsEditMode(false);
-    setEditStudentId(null);
-    resetForm();
   };
 
   const resetForm = () => {
@@ -192,15 +205,10 @@ const StudentManagement = () => {
     setLastName("");
     setDob("");
     setGender("");
-    setAddressLine1("");
-    setAddressLine2("");
-    setCity("");
     setContactNumber("");
     setContactNumberGuardian("");
     setSupervisorId(undefined);
     setRemarks("");
-    setHomeLong("");
-    setHomeLat("");
     setEmployerId(undefined);
     setCheckInTime("");
     setCheckOutTime("");
@@ -220,12 +228,12 @@ const StudentManagement = () => {
     })
     .sort((a, b) => a.student_id - b.student_id);
 
-  // Handler for OTP button
-  const handleOtpClick = async (studentId: string | number) => {
+  // UPDATED: Added loading state management
+  const handleOtpClick = async (studentId: number) => {
     setOtpDialogOpen(true);
     setOtpResult(null);
     setOtpError(null);
-    setOtpLoading(true);
+    setOtpLoadingId(studentId);
     try {
       const result = await getOTP(studentId);
       setOtpResult(result);
@@ -234,21 +242,18 @@ const StudentManagement = () => {
         err?.response?.data?.message || err?.message || "Failed to generate OTP"
       );
     } finally {
-      setOtpLoading(false);
+      setOtpLoadingId(null);
     }
   };
 
   // Open edit dialog and populate form
   const handleEditStudent = async (student: StudentEmployerSupervisor) => {
     try {
-      // Fetch complete student data
       const fullStudentData = await getStudentById(student.student_id);
-
       setEditStudentId(student.student_id);
       setIsEditMode(true);
-      setFormErrors({}); // clear errors
+      setFormErrors({});
 
-      // Pre-populate all form fields with complete student data
       setFirstName(fullStudentData.first_name || "");
       setLastName(fullStudentData.last_name || "");
       setDob(
@@ -257,9 +262,6 @@ const StudentManagement = () => {
           : ""
       );
       setGender(fullStudentData.gender || "");
-      setAddressLine1(fullStudentData.address_line1 || "");
-      setAddressLine2(fullStudentData.address_line2 || "");
-      setCity(fullStudentData.city || "");
       setContactNumber(fullStudentData.contact_number || "");
       setContactNumberGuardian(fullStudentData.contact_number_guardian || "");
       setSupervisorId(
@@ -268,12 +270,6 @@ const StudentManagement = () => {
           : undefined
       );
       setRemarks(fullStudentData.remarks || "");
-      setHomeLong(
-        fullStudentData.home_long ? String(fullStudentData.home_long) : ""
-      );
-      setHomeLat(
-        fullStudentData.home_lat ? String(fullStudentData.home_lat) : ""
-      );
       setEmployerId(
         fullStudentData.employer_id
           ? String(fullStudentData.employer_id)
@@ -311,12 +307,13 @@ const StudentManagement = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  // Confirm delete
+  // UPDATED: Added loading state management
   const handleConfirmDeleteStudent = async () => {
     if (typeof deleteStudentId !== "number" || isNaN(deleteStudentId)) {
       console.error("Invalid student ID for delete:", deleteStudentId);
       return;
     }
+    setIsDeleting(deleteStudentId);
     try {
       await deleteStudent(deleteStudentId);
       // Refresh table
@@ -327,6 +324,8 @@ const StudentManagement = () => {
     } catch (err) {
       console.error("Failed to delete student", err);
       alert("Failed to delete student. See console for details.");
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -359,9 +358,9 @@ const StudentManagement = () => {
       const age = now.getFullYear() - dobDate.getFullYear();
       const m = now.getMonth() - dobDate.getMonth();
       if (m < 0 || (m === 0 && now.getDate() < dobDate.getDate())) {
-        if (age - 1 < 16) errors.dob = "Employee must be at least 16 years old";
+        if (age - 1 < 16) errors.dob = "Student must be at least 16 years old";
       } else {
-        if (age < 16) errors.dob = "Employee must be at least 16 years old";
+        if (age < 16) errors.dob = "Student must be at least 16 years old";
       }
       if (isNaN(dobDate.getTime())) errors.dob = "Invalid date of birth";
     }
@@ -369,34 +368,27 @@ const StudentManagement = () => {
     // Gender required
     if (!gender) errors.gender = "Gender is required";
 
-    // Address line 1 required
-    if (!addressLine1.trim())
-      errors.addressLine1 = "Address Line 1 is required";
-
-    // City required
-    if (!city.trim()) errors.city = "City is required";
-
     // Phone number validation
     function validatePhone(number: string, label: string) {
       // Remove spaces and dashes for validation
       const cleaned = number.replace(/[\s-]/g, "");
       if (!cleaned) return `${label} is required`;
 
-      // Local format: 07XXXXXXXX (Sri Lanka mobile)
+      // Local format: 0XXXXXXXXX (any 10-digit Sri Lankan number)
       if (cleaned.startsWith("0")) {
-        if (!/^07\d{8}$/.test(cleaned)) {
-          return `${label} must be a valid local mobile number (07XXXXXXXX)`;
+        if (!/^0\d{9}$/.test(cleaned)) {
+          return `${label} must be a valid 10-digit local number (e.g., 0XXXXXXXXX)`;
         }
       }
-      // International format: +XXXXXXXXXXX (10-15 digits, no spaces/dashes)
-      else if (cleaned.startsWith("+")) {
-        if (!/^\+\d{10,15}$/.test(cleaned)) {
-          return `${label} must be a valid international number (+XXXXXXXXXXX, 10-15 digits)`;
+      // International format: +94XXXXXXXXX (12 digits, including country code)
+      else if (cleaned.startsWith("+94")) {
+        if (!/^\+94\d{9}$/.test(cleaned)) {
+          return `${label} must be a valid international number (+94XXXXXXXXX)`;
         }
       }
       // Invalid format
       else {
-        return `${label} must start with 0 or +`;
+        return `${label} must start with a Sri Lankan prefix (0 or +94)`;
       }
       return "";
     }
@@ -419,20 +411,9 @@ const StudentManagement = () => {
     // Employer required
     if (!employerId) errors.employerId = "Employer is required";
 
-    // Longitude/Latitude validation (optional, only if provided)
-    if (
-      homeLong &&
-      (isNaN(Number(homeLong)) ||
-        Number(homeLong) < -180 ||
-        Number(homeLong) > 180)
-    ) {
-      errors.homeLong = "Longitude must be between -180 and 180";
-    }
-    if (
-      homeLat &&
-      (isNaN(Number(homeLat)) || Number(homeLat) < -90 || Number(homeLat) > 90)
-    ) {
-      errors.homeLat = "Latitude must be between -90 and 90";
+    // Check-out time is now required
+    if (!checkOutTime) {
+      errors.checkOutTime = "Check-out time is required";
     }
 
     return errors;
@@ -458,7 +439,7 @@ const StudentManagement = () => {
             <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
               <div>
                 <h2 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">
-                  Employee Management
+                  Student Management
                 </h2>
               </div>
               <Button
@@ -466,7 +447,7 @@ const StudentManagement = () => {
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Add Employee
+                Add Student
               </Button>
             </div>
 
@@ -477,16 +458,14 @@ const StudentManagement = () => {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                   <Input
                     className="pl-10 bg-white/80 backdrop-blur-sm shadow-sm border-gray-200 rounded-xl w-full focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-200"
-                    placeholder="Search employees by name or ID..."
+                    placeholder="Search students by name or ID..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
               </div>
               <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-4 text-white shadow-md">
-                <p className="text-sm font-medium opacity-90">
-                  Total Employees
-                </p>
+                <p className="text-sm font-medium opacity-90">Total Students</p>
                 <p className="text-2xl font-bold mt-1">
                   {managementData.length}
                 </p>
@@ -531,7 +510,7 @@ const StudentManagement = () => {
                   ) : filteredSortedManagementData.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center">
-                        No employees found.
+                        No students found.
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -562,29 +541,48 @@ const StudentManagement = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
+                            {/* UPDATED: Edit button with disabled state */}
                             <button
                               onClick={() => handleEditStudent(item)}
-                              className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                              disabled={
+                                isDeleting !== null || otpLoadingId !== null
+                              }
+                              className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Edit student"
                             >
                               <Edit className="h-5 w-5" />
                             </button>
+                            {/* UPDATED: Delete button with disabled state */}
                             <button
-                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Delete student"
                               onClick={() =>
                                 handleDeleteStudent(item.student_id)
                               }
+                              disabled={
+                                isDeleting !== null || otpLoadingId !== null
+                              }
                             >
-                              <Trash className="h-5 w-5" />
+                              {isDeleting === item.student_id ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                              ) : (
+                                <Trash className="h-5 w-5" />
+                              )}
                             </button>
-                            {/* OTP Button with Key icon, green color */}
+                            {/* UPDATED: OTP Button with loading state */}
                             <button
-                              className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors duration-200"
+                              className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Send OTP"
                               onClick={() => handleOtpClick(item.student_id)}
+                              disabled={
+                                isDeleting !== null || otpLoadingId !== null
+                              }
                             >
-                              <Key className="h-5 w-5" />
+                              {otpLoadingId === item.student_id ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                              ) : (
+                                <Key className="h-5 w-5" />
+                              )}
                             </button>
                           </div>
                         </TableCell>
@@ -603,18 +601,18 @@ const StudentManagement = () => {
         <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto bg-gradient-to-br from-white to-gray-50">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              {isEditMode ? "Edit Employee" : "Add New Employee"}
+              {isEditMode ? "Edit Student" : "Add New Student"}
             </DialogTitle>
             <p className="text-gray-500 text-sm mt-1">
               {isEditMode
-                ? "Update the employee details below"
-                : "Fill in the details to add a new employee to the system"}
+                ? "Update the student details below"
+                : "Fill in the details to add a new student to the system"}
             </p>
           </DialogHeader>
 
-          <form onSubmit={handleSubmitStudent} className="mt-6">
+          <form ref={formRef} onSubmit={handleSubmitStudent} className="mt-6">
             <div className="space-y-6">
-              {/* Name */}
+              {/* Form fields... (unchanged) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white/50 p-4 rounded-xl border border-gray-100">
                   <Label
@@ -698,110 +696,6 @@ const StudentManagement = () => {
                   {formErrors.gender && (
                     <span className="text-red-600 text-xs">
                       {formErrors.gender}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Home address */}
-              <div className="bg-white/50 p-4 rounded-xl border border-gray-100">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">
-                  Home Address
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label
-                      htmlFor="addressLine1"
-                      className="text-xs text-gray-500"
-                    >
-                      Address Line 1 <span className="text-red-600">*</span>
-                    </Label>
-                    <Input
-                      id="addressLine1"
-                      value={addressLine1}
-                      onChange={(e) => setAddressLine1(e.target.value)}
-                      className="mt-1.5 bg-white/80"
-                    />
-                    {formErrors.addressLine1 && (
-                      <span className="text-red-600 text-xs">
-                        {formErrors.addressLine1}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <Label
-                      htmlFor="addressLine2"
-                      className="text-xs text-gray-500"
-                    >
-                      Address Line 2
-                    </Label>
-                    <Input
-                      id="addressLine2"
-                      value={addressLine2}
-                      onChange={(e) => setAddressLine2(e.target.value)}
-                      className="mt-1.5 bg-white/80"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="city" className="text-xs text-gray-500">
-                      City <span className="text-red-600">*</span>
-                    </Label>
-                    <Input
-                      id="city"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="mt-1.5 bg-white/80"
-                    />
-                    {formErrors.city && (
-                      <span className="text-red-600 text-xs">
-                        {formErrors.city}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Home coordinates */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white/50 p-4 rounded-xl border border-gray-100">
-                  <Label
-                    htmlFor="homeLat"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Home Latitude
-                  </Label>
-                  <Input
-                    id="homeLat"
-                    type="number"
-                    step="any"
-                    value={homeLat}
-                    onChange={(e) => setHomeLat(e.target.value)}
-                    className="mt-1.5 bg-white/80"
-                  />
-                  {formErrors.homeLat && (
-                    <span className="text-red-600 text-xs">
-                      {formErrors.homeLat}
-                    </span>
-                  )}
-                </div>
-                <div className="bg-white/50 p-4 rounded-xl border border-gray-100">
-                  <Label
-                    htmlFor="homeLong"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Home Longitude
-                  </Label>
-                  <Input
-                    id="homeLong"
-                    type="number"
-                    step="any"
-                    value={homeLong}
-                    onChange={(e) => setHomeLong(e.target.value)}
-                    className="mt-1.5 bg-white/80"
-                  />
-                  {formErrors.homeLong && (
-                    <span className="text-red-600 text-xs">
-                      {formErrors.homeLong}
                     </span>
                   )}
                 </div>
@@ -935,7 +829,7 @@ const StudentManagement = () => {
                     htmlFor="checkOutTime"
                     className="text-sm font-medium text-gray-700"
                   >
-                    Check-out Time
+                    Check-out Time <span className="text-red-600">*</span>
                   </Label>
                   <Input
                     id="checkOutTime"
@@ -944,6 +838,11 @@ const StudentManagement = () => {
                     onChange={(e) => setCheckOutTime(e.target.value)}
                     className="mt-1.5 bg-white/80"
                   />
+                  {formErrors.checkOutTime && (
+                    <span className="text-red-600 text-xs">
+                      {formErrors.checkOutTime}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -963,12 +862,22 @@ const StudentManagement = () => {
                 />
               </div>
 
-              {/* Submit button */}
+              {/* UPDATED: Submit button with loading state */}
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-200 py-6 text-lg font-medium"
               >
-                {isEditMode ? "Update Employee" : "Add Employee"}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isEditMode ? "Updating..." : "Adding..."}
+                  </>
+                ) : isEditMode ? (
+                  "Update Student"
+                ) : (
+                  "Add Student"
+                )}
               </Button>
             </div>
           </form>
@@ -986,7 +895,7 @@ const StudentManagement = () => {
               </span>
             </DialogTitle>
           </DialogHeader>
-          {otpLoading ? (
+          {otpLoadingId !== null ? (
             <div className="text-center py-8">Generating OTP...</div>
           ) : otpError ? (
             <div className="text-red-600 py-4">{otpError}</div>
@@ -1033,20 +942,33 @@ const StudentManagement = () => {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete Employee</DialogTitle>
+            <DialogTitle>Delete Student</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            Are you sure you want to delete this employee?
+            Are you sure you want to delete this student?
           </div>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isDeleting !== null}
             >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleConfirmDeleteStudent}>
-              Delete
+            {/* UPDATED: Delete button with loading state */}
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDeleteStudent}
+              disabled={isDeleting !== null}
+            >
+              {isDeleting !== null ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

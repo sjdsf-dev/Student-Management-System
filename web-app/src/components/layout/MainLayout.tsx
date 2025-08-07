@@ -1,7 +1,8 @@
-import { ReactNode, useState, useEffect } from "react";
+// MainLayout.tsx - Updated to use AuthContext
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Logo from "@/components/Logo";
-import Cookies from "js-cookie";
+import { useAuth } from "../context/AuthContext";
 import {
   LogOut,
   BriefcaseBusiness,
@@ -36,7 +37,7 @@ function Sidebar({ compact = false }) {
     {
       to: "/student-management",
       icon: <Contact className="w-5 h-5" />,
-      label: "Employee Management",
+      label: "Student Management",
       match: "/student-management",
     },
     {
@@ -103,61 +104,23 @@ function Sidebar({ compact = false }) {
 }
 
 const MainLayout = ({ children }: MainLayoutProps) => {
-  // const location = useLocation();
-  const [user, setUser] = useState<{
-    first_name?: string;
-    last_name?: string;
-    email?: string;
-  } | null>(null);
+  // Use the auth context instead of local state
+  const { user, loading, logout } = useAuth();
 
   // Sidebar compact state
   const [sidebarCompact, setSidebarCompact] = useState(true); // collapsed by default
 
-  useEffect(() => {
-    let userInfo = null;
-    // Try localStorage first (for consistency with logout)
-    const localUser = localStorage.getItem("userInfo");
-    if (localUser) {
-      try {
-        userInfo = JSON.parse(localUser);
-      } catch {
-        userInfo = null;
-      }
-    } else {
-      // Try sessionStorage fallback
-      const sessionUser = sessionStorage.getItem("userInfo");
-      if (sessionUser) {
-        try {
-          userInfo = JSON.parse(sessionUser);
-        } catch {
-          userInfo = null;
-        }
-      } else {
-        const userInfoCookie = Cookies.get("userinfo");
-        if (userInfoCookie) {
-          try {
-            userInfo = JSON.parse(atob(userInfoCookie));
-          } catch {
-            userInfo = null;
-          }
-        }
-      }
-    }
-    setUser(userInfo);
-  }, []);
-  console.log("User info:", user);
-  const handleLogout = () => {
-    // Clear stored user info
-    localStorage.removeItem("userInfo");
-    sessionStorage.removeItem("userInfo");
-    setUser(null);
-
-    // Redirect to Choreo logout
-    const sessionHint = Cookies.get("session_hint");
-    window.location.href = `/auth/logout${
-      sessionHint ? `?session_hint=${sessionHint}` : ""
-    }`;
-  };
+  // Show loading state while fetching user info
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
@@ -184,7 +147,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
               <Logo className="h-16" />
               {!sidebarCompact && (
                 <span className="ml-2 text-md font-medium text-gray-700 transition-none">
-                  Employee Management Portal
+                  Student Management Portal
                 </span>
               )}
             </Link>
@@ -215,14 +178,14 @@ const MainLayout = ({ children }: MainLayoutProps) => {
                     <p className="text-xs text-gray-500">{user?.email || ""}</p>
                   </div>
                 </div>
-                <button
-                  onClick={handleLogout}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors "
-                  title="Logout"
-                >
-                  <LogOut className="w-5 h-5" />
-                </button>
               </div>
+              <button
+                onClick={logout}
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors "
+                title="Logout"
+              >
+                Logout
+              </button>
             </div>
           )}
           {sidebarCompact && (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Edit, Trash, Plus, Search } from "lucide-react";
+import { Edit, Trash, Plus, Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +51,10 @@ const EmployerManagement = () => {
   // Data states
   const [employers, setEmployers] = useState<Employer[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // NEW: Loading states for async actions
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -116,21 +120,24 @@ const EmployerManagement = () => {
     setIsDeleteDialogOpen(true);
   };
 
+  // UPDATED: Added loading state management
   const handleConfirmDeleteEmployer = async () => {
     if (typeof deleteEmployerId !== "number" || isNaN(deleteEmployerId)) {
       return;
     }
-    setLoading(true);
+    setIsDeleting(deleteEmployerId);
     try {
       await employerService.deleteEmployer(deleteEmployerId);
+      // Filter out the deleted employer from the list
       setEmployers((prev) => prev.filter((emp) => emp.id !== deleteEmployerId));
       setIsDeleteDialogOpen(false);
       setDeleteEmployerId(null);
     } catch (err) {
       alert("Failed to delete employer. See console for details.");
       console.error(err);
+    } finally {
+      setIsDeleting(null);
     }
-    setLoading(false);
   };
 
   // Form handlers
@@ -145,6 +152,7 @@ const EmployerManagement = () => {
     }));
   };
 
+  // UPDATED: Added loading state management
   const handleSubmitEmployer = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsFormSubmitted(true);
@@ -153,8 +161,9 @@ const EmployerManagement = () => {
       setFormErrors(errors);
       return;
     }
+
+    setIsSubmitting(true);
     try {
-      setLoading(true);
       if (isEditMode && editEmployerId) {
         await employerService.updateEmployer(editEmployerId, form);
       } else {
@@ -170,9 +179,10 @@ const EmployerManagement = () => {
     } catch (err) {
       alert("Failed to save employer. See console for details.");
       console.error(err);
+    } finally {
+      setIsSubmitting(false);
+      setIsFormSubmitted(false);
     }
-    setLoading(false);
-    setIsFormSubmitted(false);
   };
 
   const resetForm = () => {
@@ -287,19 +297,27 @@ const EmployerManagement = () => {
                         </TableCell>
                         <TableCell className="text-center w-1/5">
                           <div className="flex justify-center space-x-2">
+                            {/* UPDATED: Edit button with disabled state */}
                             <button
                               onClick={() => handleEditEmployer(item)}
-                              className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                              disabled={isDeleting !== null}
+                              className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Edit employer"
                             >
                               <Edit className="h-5 w-5" />
                             </button>
+                            {/* UPDATED: Delete button with loading state */}
                             <button
-                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Delete employer"
                               onClick={() => handleDeleteEmployer(item.id)}
+                              disabled={isDeleting !== null}
                             >
-                              <Trash className="h-5 w-5" />
+                              {isDeleting === item.id ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                              ) : (
+                                <Trash className="h-5 w-5" />
+                              )}
                             </button>
                           </div>
                         </TableCell>
@@ -329,7 +347,7 @@ const EmployerManagement = () => {
 
           <form onSubmit={handleSubmitEmployer} className="mt-6">
             <div className="space-y-6">
-              {/* Name */}
+              {/* Form fields... (unchanged) */}
               <div className="bg-white/50 p-4 rounded-xl border border-gray-100">
                 <Label
                   htmlFor="name"
@@ -473,12 +491,22 @@ const EmployerManagement = () => {
                   </span>
                 )}
               </div>
-              {/* Submit button */}
+              {/* UPDATED: Submit button with loading state */}
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-200 py-6 text-lg font-medium"
               >
-                {isEditMode ? "Update Employer" : "Add Employer"}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isEditMode ? "Updating..." : "Adding..."}
+                  </>
+                ) : isEditMode ? (
+                  "Update Employer"
+                ) : (
+                  "Add Employer"
+                )}
               </Button>
             </div>
           </form>
@@ -498,11 +526,24 @@ const EmployerManagement = () => {
             <Button
               variant="outline"
               onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isDeleting !== null}
             >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleConfirmDeleteEmployer}>
-              Delete
+            {/* UPDATED: Delete button with loading state */}
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDeleteEmployer}
+              disabled={isDeleting !== null}
+            >
+              {isDeleting !== null ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

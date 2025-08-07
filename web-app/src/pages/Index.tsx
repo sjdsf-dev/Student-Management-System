@@ -168,7 +168,7 @@ const Index = () => {
                 <Users className="w-6 h-6 text-white" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Employee Management
+                Student Management
               </h3>
               <p className="text-gray-600">
                 Easily manage and track employee information, performance, and
