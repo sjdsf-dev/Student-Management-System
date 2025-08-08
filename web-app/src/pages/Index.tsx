@@ -121,13 +121,9 @@ const Index = () => {
         <div className="max-w-7xl mx-auto flex justify-end">
           {signedIn ? (
             <div className="flex items-center gap-4">
-              <span className="text-gray-700">
-                Welcome{" "}
-                {user?.name || user?.given_name || user?.email || "User"}
-              </span>
               <button
                 onClick={handleLogout}
-                className="inline-flex items-center px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-600 text-white font-semibold text-lg shadow-lg hover:from-blue-800 hover:to-purple-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="inline-flex items-center px-4 py-4 rounded-xl bg-[#2F2F2F] hover:bg-[#1a1a1a] text-white font-bold text-lg shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#5E5E5E] disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <LogIn className="mr-2 w-5 h-5" />
                 Logout
@@ -137,7 +133,7 @@ const Index = () => {
             <button
               onClick={handleLogin}
               disabled={isLoading}
-              className="inline-flex items-center px-6 py-3 rounded-xl bg-[#2F2F2F] hover:bg-[#1a1a1a] text-white font-bold text-lg shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#5E5E5E] disabled:opacity-60 disabled:cursor-not-allowed"
+              className="inline-flex items-center px-4 py-4 rounded-xl bg-[#2F2F2F] hover:bg-[#1a1a1a] text-white font-bold text-lg shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#5E5E5E] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <FaMicrosoft className="mr-3 w-6 h-6" />
               {isLoading ? "Signing in..." : "Login with Microsoft"}
