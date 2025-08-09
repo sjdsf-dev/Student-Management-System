@@ -61,6 +61,8 @@ func GetStudentDetails(w http.ResponseWriter, r *http.Request) {
 			&student.FirstName,
 			&student.LastName,
 			&student.EmployerName,
+			&student.CheckInTime,
+			&student.CheckOutTime,
 			&checkInDateTime,
 			&checkOutDateTime,
 			&emotion,
