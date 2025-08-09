@@ -252,14 +252,14 @@ const Dashboard = () => {
                       status,
                       statusColor,
                       workingHours: `${
-                        employee.check_in_date_time
+                        employee.check_in_time
                           ? new Date(
-                              employee.check_in_date_time
+                              employee.check_in_time
                             ).toLocaleTimeString()
                           : "N/A"
                       } - ${
-                        employee.check_out_date_time &&
-                        !employee.check_out_date_time.startsWith(
+                        employee.check_out_time &&
+                        !employee.check_out_time.startsWith(
                           "0001-01-01T05:53:28"
                         )
                           ? new Date(

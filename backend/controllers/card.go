@@ -15,8 +15,10 @@ func GetStudentDetails(w http.ResponseWriter, r *http.Request) {
         s.first_name,
         s.last_name,
         e.name AS employer_name,
-        a.check_in_date_time,
-        a.check_out_date_time,
+        s.check_in_time,
+        s.check_out_time,
+		a.check_in_date_time,
+		a.check_out_date_time,
         m.emotion
     FROM student s
     LEFT JOIN employer e ON s.employer_id = e.id
