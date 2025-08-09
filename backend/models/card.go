@@ -10,6 +10,8 @@ type StudentCard struct {
 	CheckInDateTime  time.Time `json:"check_in_date_time"`
 	CheckOutDateTime time.Time `json:"check_out_date_time"`
 	Emotion          string    `json:"emotion"`
+	CheckInTime      string    `json:"check_in_time"`
+	CheckOutTime     string    `json:"check_out_time"`
 }
 
 func (StudentCard) TableName() string {
