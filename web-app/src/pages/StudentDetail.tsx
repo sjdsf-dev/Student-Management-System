@@ -111,7 +111,7 @@ const StudentDetail = () => {
       : "Student",
     employer_name: studentInfo?.employer_name || "",
     guardian_contact_no: studentInfo?.contact_number_guardian || "",
-    employer_contact_no: studentInfo?.contact_number || "",
+    student_contact_no: studentInfo?.contact_number || "",
     ...studentInfo,
   };
 
@@ -166,7 +166,7 @@ const StudentDetail = () => {
                     Guardian: {employee.guardian_contact_no}
                   </span>
                   <span className="inline-block px-3 py-1 rounded-full bg-gradient-to-r from-indigo-100 to-indigo-200 text-indigo-700 text-xs font-semibold shadow">
-                    Employer: {employee.employer_contact_no}
+                    Student: {employee.student_contact_no}
                   </span>
                 </div>
               </div>

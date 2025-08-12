@@ -1,10 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import { Clock, Users, Smile, Frown, Meh, Search } from "lucide-react";
+import { X, Clock, Users, Smile, Frown, Meh, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useCardService } from "../api/getCard";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
   const { getCards } = useCardService();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -180,6 +179,17 @@ const Dashboard = () => {
                   className="block w-full rounded-md border-gray-300 pl-10 pr-4 py-2 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm sm:text-sm"
                   placeholder="Search by name or ID"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setSearchQuery("")}
+                    tabIndex={-1}
+                    aria-label="Clear search"
+                  >
+                    <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  </button>
+                )}
               </div>
             </div>
             {/* Stats Overview */}
@@ -253,18 +263,11 @@ const Dashboard = () => {
                       statusColor,
                       workingHours: `${
                         employee.check_in_time
-                          ? new Date(
-                              employee.check_in_time
-                            ).toLocaleTimeString()
+                          ? employee.check_in_time.slice(0, 5)
                           : "N/A"
                       } - ${
-                        employee.check_out_time &&
-                        !employee.check_out_time.startsWith(
-                          "0001-01-01T05:53:28"
-                        )
-                          ? new Date(
-                              employee.check_out_date_time
-                            ).toLocaleTimeString()
+                        employee.check_out_time
+                          ? employee.check_out_time.slice(0, 5)
                           : "N/A"
                       }`,
                       mood: employee.emotion,

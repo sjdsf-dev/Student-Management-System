@@ -16,7 +16,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import ManagerFeedback from "./pages/ManagerFeedback";
 import SupervisorManagement from "./pages/SupervisorManagement";
 import EmployerManagement from "./pages/EmployerManagement";
-
+import EmergencyContact from "./pages/EmergencyContact";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -84,6 +84,16 @@ const App = () => (
                 <ProtectedRoute>
                   <MainLayout>
                     <EmployerManagement />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/emergency-contact"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <EmergencyContact />
                   </MainLayout>
                 </ProtectedRoute>
               }

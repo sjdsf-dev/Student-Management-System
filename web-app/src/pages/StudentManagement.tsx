@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Edit, Plus, Key, Trash, Loader2 } from "lucide-react";
+import { Search, Edit, Plus, Key, Trash, Loader2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,7 +38,7 @@ import { getOTP } from "@/api/getOTP";
 const genders = ["Male", "Female", "Other"];
 
 const StudentManagement = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -122,9 +122,9 @@ const StudentManagement = () => {
       .catch(() => setSupervisorOptions([]));
   }, []);
 
-  const handleViewStudent = (id: number) => {
-    navigate(`/student/${id}`);
-  };
+  // const handleViewStudent = (id: number) => {
+  //   navigate(`/student/${id}`);
+  // };
 
   const handleAddStudent = () => {
     setIsEditMode(false);
@@ -364,7 +364,6 @@ const StudentManagement = () => {
       }
       if (isNaN(dobDate.getTime())) errors.dob = "Invalid date of birth";
     }
-
     // Gender required
     if (!gender) errors.gender = "Gender is required";
 
@@ -462,6 +461,17 @@ const StudentManagement = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      onClick={() => setSearchQuery("")}
+                      tabIndex={-1}
+                      aria-label="Clear search"
+                    >
+                      <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-4 text-white shadow-md">

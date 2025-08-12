@@ -9,7 +9,7 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ compact }: SidebarProps) => {
-  const location = useLocation();
+  // const location = useLocation();
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   return (

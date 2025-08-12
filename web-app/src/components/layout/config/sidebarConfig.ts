@@ -5,6 +5,7 @@ import {
   Contact,
   Factory,
   BriefcaseBusiness,
+  Phone,
 } from "lucide-react";
 
 export const SIDEBAR_ITEMS = [
@@ -20,5 +21,10 @@ export const SIDEBAR_ITEMS = [
     to: "/supervisor-management",
     icon: BriefcaseBusiness,
     label: "Supervisor Management",
+  },
+  {
+    to: "/emergency-contact",
+    icon: Phone,
+    label: "Emergency Contact",
   },
 ];

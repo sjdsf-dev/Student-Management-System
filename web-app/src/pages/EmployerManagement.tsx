@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Edit, Trash, Plus, Search, Loader2 } from "lucide-react";
+import { Edit, Trash, Plus, Search, Loader2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +23,7 @@ import {
   EmployerInput,
   useEmployerService,
 } from "../api/crudEmployer";
+import { StudentEmployerSupervisor } from "@/api/getManagement";
 
 const EmployerManagement = () => {
   const employerService = useEmployerService();
@@ -55,6 +56,13 @@ const EmployerManagement = () => {
   // NEW: Loading states for async actions
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
+
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [contactDialogData, setContactDialogData] = useState<{
+    student_id: number;
+    name: string;
+    contact_number: string;
+  } | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -198,6 +206,14 @@ const EmployerManagement = () => {
     setIsFormSubmitted(false);
   };
 
+  const handleShowContact = (student: StudentEmployerSupervisor) => {
+    setContactDialogData({
+      student_id: student.student_id,
+      name: `${student.student_first_name} ${student.student_last_name}`,
+      contact_number: student.employer_contact_number || "-",
+    });
+    setContactDialogOpen(true);
+  };
   function validateForm() {
     const errors: { [key: string]: string } = {};
     if (!form.name.trim()) errors.name = "Name is required";
@@ -244,6 +260,17 @@ const EmployerManagement = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      onClick={() => setSearchQuery("")}
+                      tabIndex={-1}
+                      aria-label="Clear search"
+                    >
+                      <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-4 text-white shadow-md">
