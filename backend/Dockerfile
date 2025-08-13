@@ -36,7 +36,7 @@ WORKDIR /app
 COPY --from=builder /app/main .
 
 # Copy the CA certificate into the image
-COPY config/ca.pem /app/config/ca.pem
+# COPY config/ca.pem /app/config/ca.pem
 
 # Change ownership of the executable and ca.pem
 RUN chown appuser:appgroup /app/main /app/config/ca.pem
