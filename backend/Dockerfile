@@ -39,7 +39,7 @@ COPY --from=builder /app/main .
 # COPY config/ca.pem /app/config/ca.pem
 
 # Change ownership of the executable and ca.pem
-RUN chown appuser:appgroup /app/main /app/config/ca.pem
+# RUN chown appuser:appgroup /app/main /app/config/ca.pem
 
 # Expose the port your application listens on (if applicable)
 EXPOSE 8080
