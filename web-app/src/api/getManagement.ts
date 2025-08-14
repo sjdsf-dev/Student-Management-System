@@ -24,5 +24,5 @@ export async function getManagementTable(): Promise<StudentEmployerSupervisor[]>
             }
         }
     );
-    return response.data;
+    return Array.isArray(response.data) ? response.data : [];
 }

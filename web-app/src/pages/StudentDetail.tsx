@@ -41,8 +41,8 @@ const StudentDetail = () => {
 
   // Prepare attendance data for table
   const attendanceData =
-    profile?.recent_attendance
-      ?.map((a) => {
+    (profile?.recent_attendance ?? [])
+      .map((a) => {
         const checkInDate = a.actual_check_in
           ? new Date(a.actual_check_in)
           : null;
@@ -82,8 +82,8 @@ const StudentDetail = () => {
   // Prepare emotional trend data for chart
   const emotionMap = { sad: 0, neutral: 1, happy: 2 };
   const emotionalData =
-    profile?.recent_moods
-      ?.map((m: Mood) => ({
+    (profile?.recent_moods ?? [])
+      .map((m: Mood) => ({
         date: m.recorded_at?.slice(0, 10),
         value: emotionMap[m.emotion] ?? 1,
         recorded_at: m.recorded_at,

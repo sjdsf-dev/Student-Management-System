@@ -125,8 +125,11 @@ const SupervisorManagement = () => {
     setIsFormSubmitted(false);
   };
 
+  // Safeguard supervisors to always be an array
+  const safeSupervisors = Array.isArray(supervisors) ? supervisors : [];
+
   // Filter and sort supervisors by search query and SupervisorID
-  const filteredSortedSupervisors = [...supervisors]
+  const filteredSortedSupervisors = [...safeSupervisors]
     .filter((item) => {
       const fullName = `${item.first_name} ${item.last_name}`.toLowerCase();
       const idStr = String(item.supervisor_id);

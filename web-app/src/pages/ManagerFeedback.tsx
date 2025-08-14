@@ -48,8 +48,11 @@ const ManagerFeedback: React.FC = () => {
   // Only show columns in COLUMN_ORDER
   const headers = COLUMN_ORDER;
 
+  // Safeguard responses to always be an array
+  const safeResponses = Array.isArray(responses) ? responses : [];
+
   // Filter responses by search (case-insensitive)
-  const filteredResponses = responses.filter((resp) =>
+  const filteredResponses = safeResponses.filter((resp) =>
     resp["Student Name"]?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 

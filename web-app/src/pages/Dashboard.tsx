@@ -17,8 +17,11 @@ const Dashboard = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  // Safeguard employees to always be an array
+  const safeEmployees = Array.isArray(employees) ? employees : [];
+
   // Filter employees based on search query
-  const filteredEmployees = employees.filter((employee) => {
+  const filteredEmployees = safeEmployees.filter((employee) => {
     const fullName =
       `${employee.first_name} ${employee.last_name}`.toLowerCase();
     const employeeId = String(employee.student_id).toLowerCase();
@@ -34,8 +37,8 @@ const Dashboard = () => {
   });
 
   // Calculate statistics
-  const totalEmployees = employees.length;
-  const happyEmployees = employees.filter(
+  const totalEmployees = safeEmployees.length;
+  const happyEmployees = safeEmployees.filter(
     (emp) => emp.emotion === "happy"
   ).length;
 
@@ -88,16 +91,18 @@ const Dashboard = () => {
   }
 
   // Calculate checked in employees using the same logic as getStatusForToday
-  const checkedInEmployees = employees.filter(
+  const checkedInEmployees = safeEmployees.filter(
     (emp) => getStatusForToday(emp).status === "In"
   ).length;
 
   // Emotion counts
-  const happyCount = employees.filter((emp) => emp.emotion === "happy").length;
-  const neutralCount = employees.filter(
+  const happyCount = safeEmployees.filter(
+    (emp) => emp.emotion === "happy"
+  ).length;
+  const neutralCount = safeEmployees.filter(
     (emp) => emp.emotion === "neutral"
   ).length;
-  const sadCount = employees.filter((emp) => emp.emotion === "sad").length;
+  const sadCount = safeEmployees.filter((emp) => emp.emotion === "sad").length;
 
   if (loading) {
     return <DashboardSkeleton />;

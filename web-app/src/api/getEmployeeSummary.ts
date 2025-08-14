@@ -42,5 +42,12 @@ export async function getTraineeProfile(
       },
     }
   );
-  return response.data;
+  const data = response.data as Partial<TraineeProfileResponse> | undefined;
+  return {
+    student_info: (data?.student_info as any) || ({} as any),
+    recent_moods: Array.isArray(data?.recent_moods) ? data!.recent_moods : [],
+    recent_attendance: Array.isArray(data?.recent_attendance)
+      ? data!.recent_attendance
+      : [],
+  } as unknown as TraineeProfileResponse;
 }

@@ -73,8 +73,11 @@ const EmployerManagement = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  // Safeguard employers to always be an array
+  const safeEmployers = Array.isArray(employers) ? employers : [];
+
   // Filter and sort employers by search query and ID
-  const filteredSortedEmployers = [...employers]
+  const filteredSortedEmployers = [...safeEmployers]
     .filter((item) => {
       const name = item.name.toLowerCase();
       const idStr = String(item.id);

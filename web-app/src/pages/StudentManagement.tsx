@@ -215,8 +215,13 @@ const StudentManagement = () => {
     setIsFormSubmitted(false);
   };
 
+  // Safeguard managementData to always be an array
+  const safeManagementData = Array.isArray(managementData)
+    ? managementData
+    : [];
+
   // Filter and sort managementData by search query and student_id
-  const filteredSortedManagementData = [...managementData]
+  const filteredSortedManagementData = [...safeManagementData]
     .filter((item) => {
       const fullName =
         `${item.student_first_name} ${item.student_last_name}`.toLowerCase();
