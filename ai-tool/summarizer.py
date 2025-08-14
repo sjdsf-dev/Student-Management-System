@@ -6,7 +6,13 @@ import pandas as pd
 import logging
 import requests
 import os
+import sys
 from typing import Dict, Optional
+
+# Suppress numpy warnings at startup
+import warnings
+warnings.filterwarnings('ignore', message='numpy.dtype size changed')
+warnings.filterwarnings('ignore', message='numpy.ufunc size changed')
 
 # --- Configuration ---
 # Path to your service account key file
@@ -29,7 +35,7 @@ logging.basicConfig(
     format='%(asctime)s %(levelname)s %(message)s',
     handlers=[
         logging.FileHandler("student_summarizer.log"),
-        logging.StreamHandler()
+        logging.StreamHandler(sys.stdout)
     ]
 )
 
@@ -55,11 +61,16 @@ def get_sheet_data():
             logging.warning("No data found in Google Sheet.")
             return None
         else:
-            df = pd.DataFrame(values[1:], columns=values[0])
+            # Use copy=False and handle data types explicitly to avoid numpy warnings
+            df = pd.DataFrame(values[1:], columns=values[0], copy=False)
             # Clean column names by stripping whitespace
             df.columns = df.columns.str.strip()
+            # Convert object dtypes to string to avoid numpy issues
+            for col in df.columns:
+                if df[col].dtype == 'object':
+                    df[col] = df[col].astype('string')
             logging.info(f"DataFrame columns: {df.columns.tolist()}")
-            logging.info(f"DataFrame head:\n{df.head()}")
+            logging.info(f"DataFrame shape: {df.shape}")
             return df
     except Exception as e:
         logging.error(f"An error occurred while retrieving sheet data: {e}", exc_info=True)
@@ -233,6 +244,7 @@ def summarize_student_data(df, student_name):
         return {"error": f"Missing columns in sheet: {missing_columns}"}
 
     # Filter data for the specified student (case-insensitive)
+    # Use .copy() to avoid pandas warnings
     student_df = df[df['Student Name'].str.lower() == student_name.lower()].copy()
     logging.info(f"Filtered student_df shape: {student_df.shape}")
 
@@ -267,7 +279,9 @@ def summarize_student_data(df, student_name):
 
     # Calculate summary statistics
     try:
-        total_days_attended = pd.to_numeric(recent_df['Number of days attended this week'], errors='coerce').fillna(0).sum()
+        # Use pandas nullable integer dtype to handle NaN values properly
+        days_attended_series = pd.to_numeric(recent_df['Number of days attended this week'], errors='coerce').fillna(0)
+        total_days_attended = days_attended_series.sum()
     except:
         total_days_attended = 0
         
@@ -276,10 +290,9 @@ def summarize_student_data(df, student_name):
     on_time_percentage = (on_time_count / total_weeks) * 100 if total_weeks > 0 else 0
     worked_without_prompts = recent_df[recent_df['Worked without prompts'].str.lower().str.strip() == 'yes'].shape[0]
     
-    # Consolidate qualitative data
-    behavior_changes = recent_df[
-        recent_df['Change in behaviour noted?'].str.lower().str.strip() == 'yes'
-    ]['If yes, mention that behaviour'].dropna().unique().tolist()
+    # Consolidate qualitative data - handle potential NaN values
+    behavior_mask = recent_df['Change in behaviour noted?'].str.lower().str.strip() == 'yes'
+    behavior_changes = recent_df[behavior_mask]['If yes, mention that behaviour'].dropna().unique().tolist()
     
     other_comments = recent_df['Any other comments?'].dropna().unique().tolist()
     # Remove empty strings and whitespace-only comments
@@ -295,7 +308,7 @@ def summarize_student_data(df, student_name):
             "end_date": datetime.now().strftime('%Y-%m-%d')
         },
         "total_days_attended": int(total_days_attended),
-        "on_time_percentage": round(on_time_percentage, 2),
+        "on_time_percentage": round(float(on_time_percentage), 2),
         "worked_without_prompts_count": int(worked_without_prompts),
         "total_weeks_recorded": total_weeks,
         "behavior_changes": behavior_changes,
@@ -370,6 +383,5 @@ if __name__ == '__main__':
     logging.info("Starting Enhanced Student Summary API with Gemini LLM")
     logging.info(f"Gemini Configuration - Model: {GEMINI_MODEL}")
     logging.info(f"Gemini API configured: {bool(GEMINI_API_KEY)}")
-    port = int(os.environ.get("PORT", 5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
-
+    port = int(os.environ.get("PORT", 8080))
+    app.run(debug=False, host='0.0.0.0', port=port)
