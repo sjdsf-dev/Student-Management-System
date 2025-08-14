@@ -23,6 +23,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY . .
 
+# Create a non-root user
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+
+# Switch to non-root user
+USER appuser
+
 # Expose port (optional for Choreo but useful for local runs)
 EXPOSE $PORT
 
