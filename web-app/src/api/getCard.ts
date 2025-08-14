@@ -11,7 +11,8 @@ export function useCardService() {
         },
         withCredentials: true, // Ensure cookies are sent with the request
       });
-      return response.data;
+      const data = response.data as unknown;
+      return Array.isArray(data) ? (data as Card[]) : [];
     } catch (error: any) {
       console.error("Error fetching cards:", error);
       throw error;

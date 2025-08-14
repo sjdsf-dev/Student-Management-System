@@ -10,5 +10,6 @@ export async function getManagerFeedback(): Promise<FeedbackResponse[]> {
       `Failed to fetch manager feedback: ${res.status} ${res.statusText}`
     );
   }
-  return await res.json();
+  const json = await res.json();
+  return Array.isArray(json) ? (json as FeedbackResponse[]) : [];
 }

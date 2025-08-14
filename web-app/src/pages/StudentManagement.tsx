@@ -115,10 +115,10 @@ const StudentManagement = () => {
 
     // Fetch employer and supervisor options for dropdowns
     getAllEmployerIDsAndNames()
-      .then(setEmployerOptions)
+      .then((opts) => setEmployerOptions(Array.isArray(opts) ? opts : []))
       .catch(() => setEmployerOptions([]));
     getAllSupervisorIDsAndNames()
-      .then(setSupervisorOptions)
+      .then((opts) => setSupervisorOptions(Array.isArray(opts) ? opts : []))
       .catch(() => setSupervisorOptions([]));
   }, []);
 

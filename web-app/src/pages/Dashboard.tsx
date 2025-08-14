@@ -12,7 +12,7 @@ const Dashboard = () => {
   useEffect(() => {
     setLoading(true);
     getCards()
-      .then((data) => setEmployees(data))
+      .then((data) => setEmployees(Array.isArray(data) ? data : []))
       .catch(() => setEmployees([]))
       .finally(() => setLoading(false));
   }, []);
