@@ -1,0 +1,120 @@
+openapi: 3.0.3
+info:
+  title: Enhanced Student Summary API
+  version: 1.0.0
+  description: |
+    This API retrieves student performance data from a Google Sheet and generates
+    an AI-enhanced summary using the Google Gemini LLM.
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+paths:
+  /student_summary:
+    get:
+      summary: Get enhanced student summary
+      description: |
+        Retrieves a summary of a student's recent performance from a Google Sheet,
+        enhanced using the Gemini LLM if available.
+      parameters:
+        - name: student_name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Full name of the student to summarize.
+      responses:
+        "200":
+          description: Student summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  student_name:
+                    type: string
+                  summary_period:
+                    type: object
+                    properties:
+                      start_date:
+                        type: string
+                        format: date
+                      end_date:
+                        type: string
+                        format: date
+                  total_days_attended:
+                    type: integer
+                  on_time_percentage:
+                    type: number
+                    format: float
+                  worked_without_prompts_count:
+                    type: integer
+                  total_weeks_recorded:
+                    type: integer
+                  behavior_changes:
+                    type: array
+                    items:
+                      type: string
+                  other_comments:
+                    type: array
+                    items:
+                      type: string
+                  ai_generated_summary:
+                    type: string
+        "400":
+          description: Missing or invalid student_name parameter
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "404":
+          description: Student not found or no data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /health:
+    get:
+      summary: Health check
+      description: Returns the status of the API.
+      responses:
+        "200":
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+  /llm_status:
+    get:
+      summary: Check Gemini API status
+      description: |
+        Returns configuration and availability status of the Gemini LLM service.
+      responses:
+        "200":
+          description: LLM status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  gemini:
+                    type: object
+                    properties:
+                      configured:
+                        type: boolean
+                      available:
+                        type: boolean
+                      model:
+                        type: string
