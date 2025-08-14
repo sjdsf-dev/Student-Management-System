@@ -26,10 +26,10 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application code
 COPY . .
 
-# Create a non-root user for security
-RUN adduser --disabled-password --gecos '' appuser && \
+# Create a non-root user for security (Choreo requires UID between 10000-20000)
+RUN adduser --disabled-password --gecos '' --uid 10001 appuser && \
     chown -R appuser:appuser /app
-USER appuser
+USER 10001
 
 # Expose the port (Choreo typically uses 8080)
 EXPOSE 8080
