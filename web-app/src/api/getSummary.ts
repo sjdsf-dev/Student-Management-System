@@ -1,7 +1,6 @@
 // TODO
 // No need to send API KEY in headers for APIs
-import axios from "axios";
-import { API_URL } from "../config/configs";
+import apiClient from "../lib/axios";
 import { appConfig } from "../config/configs";
 
 export interface Attendance {
@@ -28,15 +27,17 @@ const API_KEY =
 export async function getEmployeeSummary(
   studentId: number
 ): Promise<EmployeeSummary> {
-  const response = await axios.get<EmployeeSummary>(
-    `${API_URL}/employee-summary`,
-    {
+  try {
+    const response = await apiClient.get<EmployeeSummary>('/employee-summary', {
       headers: {
-        "Content-Type": "application/json",
         "api-key": API_KEY,
         "student-id": studentId.toString(),
       },
-    }
-  );
-  return response.data;
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching employee summary:", error);
+    // The axios interceptor will handle 401/403 errors globally
+    throw error;
+  }
 }

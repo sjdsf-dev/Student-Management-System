@@ -1,6 +1,5 @@
-import axios from "axios";
+import apiClient from "../lib/axios";
 import { appConfig } from "../config/configs";
-import { API_URL } from "../config/configs";
 
 const API_KEY =
   appConfig.VITE_API_KEY ||
@@ -8,19 +7,17 @@ const API_KEY =
 
 export async function getOTP(studentId: string | number) {
   try {
-    const response = await axios.post(
-      `${API_URL}/generate-otp`,
-      {},
-      {
-        headers: {
-          accept: "application/json",
-          "student-id": String(studentId),
-          "api-key": API_KEY,
-        },
-      }
-    );
+    const response = await apiClient.post('/generate-otp', {}, {
+      headers: {
+        accept: "application/json",
+        "student-id": String(studentId),
+        "api-key": API_KEY,
+      },
+    });
     return response.data;
   } catch (error) {
+    console.error("Error generating OTP:", error);
+    // The axios interceptor will handle 401/403 errors globally
     throw error;
   }
 }

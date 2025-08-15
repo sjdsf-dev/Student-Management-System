@@ -1,5 +1,4 @@
-import axios from "axios";
-import { API_URL } from "../config/configs";
+import apiClient from "../lib/axios";
 import { appConfig } from "../config/configs";
 
 export interface StudentInfo {
@@ -29,25 +28,33 @@ export interface TraineeProfileResponse {
   recent_moods: Mood[];
   recent_attendance: AttendanceRecord[];
 }
+
 export async function getTraineeProfile(
   studentId: number
 ): Promise<TraineeProfileResponse> {
-  const response = await axios.get<TraineeProfileResponse>(
-    `${API_URL}/trainee-profile`,
-    {
-      headers: {
-        accept: "application/json",
-        "api-key": appConfig.VITE_API_KEY,
-        "student-id": studentId.toString(),
-      },
-    }
-  );
-  const data = response.data as Partial<TraineeProfileResponse> | undefined;
-  return {
-    student_info: (data?.student_info as any) || ({} as any),
-    recent_moods: Array.isArray(data?.recent_moods) ? data!.recent_moods : [],
-    recent_attendance: Array.isArray(data?.recent_attendance)
-      ? data!.recent_attendance
-      : [],
-  } as unknown as TraineeProfileResponse;
+  try {
+    const response = await apiClient.get<TraineeProfileResponse>(
+      "/trainee-profile",
+      {
+        headers: {
+          accept: "application/json",
+          "api-key": appConfig.VITE_API_KEY, // Just sending them, no use now
+          "student-id": studentId.toString(),
+        },
+      }
+    );
+
+    const data = response.data as Partial<TraineeProfileResponse> | undefined;
+    return {
+      student_info: (data?.student_info as any) || ({} as any),
+      recent_moods: Array.isArray(data?.recent_moods) ? data!.recent_moods : [],
+      recent_attendance: Array.isArray(data?.recent_attendance)
+        ? data!.recent_attendance
+        : [],
+    } as unknown as TraineeProfileResponse;
+  } catch (error) {
+    console.error("Error fetching trainee profile:", error);
+    // The axios interceptor will handle 401/403 errors globally
+    throw error;
+  }
 }

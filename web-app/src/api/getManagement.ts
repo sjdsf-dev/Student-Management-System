@@ -1,6 +1,5 @@
-import axios from 'axios';
-import { API_URL } from "../config/configs";
-import  {appConfig}  from "../config/configs";
+import apiClient from "../lib/axios";
+import { appConfig } from "../config/configs";
 
 export interface StudentEmployerSupervisor {
     student_id: number;
@@ -12,17 +11,19 @@ export interface StudentEmployerSupervisor {
     supervisor_last_name: string | null;
     supervisor_contact_number: string | null;
 }
-const configs = (window as any).configs || {};
-export async function getManagementTable(): Promise<StudentEmployerSupervisor[]> {
 
-    const response = await axios.get<StudentEmployerSupervisor[]>(
-        `${API_URL}/management`,
-        {
+export async function getManagementTable(): Promise<StudentEmployerSupervisor[]> {
+    try {
+        const response = await apiClient.get<StudentEmployerSupervisor[]>('/management', {
             headers: {
                 "accept": "application/json",
                 "api-key": appConfig.VITE_API_KEY,
             }
-        }
-    );
-    return Array.isArray(response.data) ? response.data : [];
+        });
+        return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+        console.error("Error fetching management table:", error);
+        // The axios interceptor will handle 401/403 errors globally
+        throw error;
+    }
 }

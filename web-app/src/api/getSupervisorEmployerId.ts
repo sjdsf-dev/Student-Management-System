@@ -1,5 +1,4 @@
-import axios from "axios";
-import { API_URL } from "../config/configs";
+import apiClient from "../lib/axios";
 import { appConfig } from "../config/configs";
 
 // src/api/getSupervisorEmployerId.ts
@@ -24,36 +23,32 @@ const API_KEY =
 export function useSupervisorEmployerService() {
   const getAllEmployerIDsAndNames = async (): Promise<EmployerIDName[]> => {
     try {
-      const response = await axios.get<EmployerIDName[]>(
-        `${API_URL}/get-employer-ids`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "api-key": API_KEY,
-          },
-        }
-      );
-      return response.data;
+      const response = await apiClient.get<EmployerIDName[]>('/get-employer-ids', {
+        headers: {
+          "api-key": API_KEY,
+        },
+      });
+      const data = response.data as unknown;
+      return Array.isArray(data) ? (data as EmployerIDName[]) : [];
     } catch (error) {
       console.error("Error fetching employer IDs and names:", error);
+      // The axios interceptor will handle 401/403 errors globally
       throw error;
     }
   };
 
   const getAllSupervisorIDsAndNames = async (): Promise<SupervisorIDName[]> => {
     try {
-      const response = await axios.get<SupervisorIDName[]>(
-        `${API_URL}/get-supervisor-ids`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "api-key": API_KEY,
-          },
-        }
-      );
-      return response.data;
+      const response = await apiClient.get<SupervisorIDName[]>('/get-supervisor-ids', {
+        headers: {
+          "api-key": API_KEY,
+        },
+      });
+      const data = response.data as unknown;
+      return Array.isArray(data) ? (data as SupervisorIDName[]) : [];
     } catch (error) {
       console.error("Error fetching supervisor IDs and names:", error);
+      // The axios interceptor will handle 401/403 errors globally
       throw error;
     }
   };

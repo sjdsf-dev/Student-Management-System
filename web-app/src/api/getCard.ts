@@ -1,20 +1,15 @@
-import axios from "axios";
-import { API_URL } from "../config/configs";
+import apiClient from "../lib/axios";
 import { Card } from "../types/card";
 
 export function useCardService() {
   const getCards = async (): Promise<Card[]> => {
     try {
-      const response = await axios.get<Card[]>(`${API_URL}/dashboard`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true, // Ensure cookies are sent with the request
-      });
+      const response = await apiClient.get<Card[]>('/dashboard');
       const data = response.data as unknown;
       return Array.isArray(data) ? (data as Card[]) : [];
     } catch (error: any) {
       console.error("Error fetching cards:", error);
+      // The axios interceptor will handle 401/403 errors globally
       throw error;
     }
   };
