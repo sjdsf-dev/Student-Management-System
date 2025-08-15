@@ -18,6 +18,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import DOMPurify from "dompurify"; // Added for sanitization
 import {
   getTraineeProfile,
   TraineeProfileResponse,
@@ -47,15 +48,6 @@ const StudentDetail = () => {
   const [studentSummary, setStudentSummary] = useState<StudentSummary | null>(
     null
   );
-
-  // Fetch profile data
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    getTraineeProfile(Number(id))
-      .then((data) => setProfile(data))
-      .finally(() => setLoading(false));
-  }, [id]);
 
   // Prepare attendance data for table
   const attendanceData =
@@ -87,7 +79,6 @@ const StudentDetail = () => {
           actual_check_in: a.actual_check_in,
         };
       })
-      // Sort by actual_check_in ascending so earliest is first, latest is last
       .sort((a, b) =>
         a.actual_check_in > b.actual_check_in
           ? 1
@@ -106,7 +97,6 @@ const StudentDetail = () => {
         value: emotionMap[m.emotion] ?? 1,
         recorded_at: m.recorded_at,
       }))
-      // Sort by recorded_at ascending so latest is last
       .sort((a, b) =>
         a.recorded_at > b.recorded_at
           ? 1
@@ -116,10 +106,6 @@ const StudentDetail = () => {
       )
       .map(({ recorded_at, ...rest }) => rest) || [];
 
-  // No incidentReports from API
-  const incidentReports: any[] = [];
-
-  // Student info from API
   const studentInfo: StudentInfo | undefined = profile?.student_info;
 
   const employee = {
@@ -154,36 +140,37 @@ const StudentDetail = () => {
     return response.json();
   };
 
+  // ✅ Fixed: Single API call & wait until profile is loaded before calling summary
   useEffect(() => {
     if (!id) return;
     setLoading(true);
 
-    Promise.all([
-      getTraineeProfile(Number(id)),
-      // Fetch student summary using the student name (you'll need to get this from profile first)
-      // For now, using a placeholder - you might need to adjust this based on your data structure
-      getStudentSummary(employee.name),
-    ])
-      .then(([profileData, summaryData]) => {
+    getTraineeProfile(Number(id))
+      .then((profileData) => {
         setProfile(profileData);
-        setStudentSummary(summaryData);
+        if (profileData.student_info) {
+          return getStudentSummary(
+            `${profileData.student_info.first_name} ${profileData.student_info.last_name}`
+          );
+        }
+      })
+      .then((summaryData) => {
+        if (summaryData) setStudentSummary(summaryData);
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
-        // Handle error as needed
       })
       .finally(() => setLoading(false));
   }, [id]);
 
   const renderMarkdown = (text: string) => {
-    // Simple markdown-like rendering - you might want to use a proper markdown library
-    return text
+    const rawHtml = text
       .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
       .replace(/\*(.*?)\*/g, "<em>$1</em>")
       .replace(/\n/g, "<br/>");
+    return DOMPurify.sanitize(rawHtml); // ✅ Sanitized output
   };
 
-  // Set feedbacks to remarks from student info
   const feedbacks =
     studentInfo?.remarks && studentInfo.remarks.trim() !== ""
       ? [
@@ -209,170 +196,31 @@ const StudentDetail = () => {
       <div className="flex flex-1">
         <main className="flex-1 p-4">
           <div className="max-w-7xl mx-auto">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
-              <h2 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">
-                Trainer Dashboard
-              </h2>
-            </div>
-
-            {/* Employee Profile */}
-            <div className="flex flex-col md:flex-row items-center bg-gradient-to-r from-white via-blue-50 to-blue-100 rounded-2xl shadow-lg p-6 mb-8 gap-6">
-              <div className="flex-1 flex flex-col justify-center items-center md:items-start">
-                <h3 className="text-2xl font-bold text-gray-800 mb-1">
-                  {employee.name}
-                </h3>
-                <p className="text-gray-500 text-sm mb-1">
-                  ID: <span className="font-medium">{employee.id}</span>
-                </p>
-                <p className="text-gray-500 text-sm mb-1">
-                  Employer:{" "}
-                  <span className="font-medium">{employee.employer_name}</span>
-                </p>
-                <div className="flex gap-4 mt-2">
-                  <span className="inline-block px-3 py-1 rounded-full bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 text-xs font-semibold shadow">
-                    Guardian: {employee.guardian_contact_no}
-                  </span>
-                  <span className="inline-block px-3 py-1 rounded-full bg-gradient-to-r from-indigo-100 to-indigo-200 text-indigo-700 text-xs font-semibold shadow">
-                    Student: {employee.student_contact_no}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Attendance Log */}
-              <Card className="bg-gradient-to-br from-white to-blue-50 p-6 rounded-2xl shadow-md border border-blue-100/60 transition-transform hover:scale-[1.02]">
-                <h3 className="text-lg font-bold mb-4 text-blue-700">
-                  Attendance Log
-                </h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs text-gray-500">
-                        DATE
-                      </TableHead>
-                      <TableHead className="text-xs text-gray-500">
-                        CHECK IN
-                      </TableHead>
-                      <TableHead className="text-xs text-gray-500">
-                        CHECK OUT
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {attendanceData.map((record, index) => (
-                      <TableRow
-                        key={index}
-                        className="hover:bg-blue-50/60 transition"
-                      >
-                        <TableCell>{record.date}</TableCell>
-                        <TableCell>{record.checkIn}</TableCell>
-                        <TableCell>{record.checkOut}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Card>
-
-              {/* Incident Reports */}
-              <Card className="bg-gradient-to-br from-white to-red-50 p-6 rounded-2xl shadow-md border border-red-100/60 transition-transform hover:scale-[1.02]">
-                <h3 className="text-lg font-bold mb-4 text-red-700">
-                  Incident Reports
-                </h3>
-                <div className="space-y-4">
-                  {!studentSummary?.ai_generated_summary && (
-                    <div className="text-gray-400 text-sm">
-                      No incidents reported.
-                    </div>
-                  )}
-                  {studentSummary?.ai_generated_summary && (
-                    <div className="p-3 bg-red-50/60 rounded-lg shadow-sm border border-red-100">
-                      <div
-                        className="text-sm text-gray-700"
-                        dangerouslySetInnerHTML={{
-                          __html: renderMarkdown(
-                            studentSummary.ai_generated_summary
-                          ),
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              {/* Emotional Trend */}
-              <Card className="bg-gradient-to-br from-white to-yellow-50 p-6 rounded-2xl shadow-md border border-yellow-100/60 transition-transform hover:scale-[1.02]">
-                <h3 className="text-lg font-bold mb-4 text-yellow-700">
-                  Emotional Trend
-                </h3>
-                <div className="h-60">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={emotionalData}
-                      margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="date"
-                        tickFormatter={(value) => value?.slice(5)}
-                        className="text-xs text-gray-400"
-                      />
-                      <YAxis
-                        domain={[0, 2]}
-                        ticks={[0, 1, 2]}
-                        tickFormatter={(value) => {
-                          switch (value) {
-                            case 0:
-                              return "Sad";
-                            case 1:
-                              return "Neutral";
-                            case 2:
-                              return "Happy";
-                            default:
-                              return "";
-                          }
-                        }}
-                        className="text-xs text-gray-400"
-                      />
-                      <Tooltip />
-                      <Line
-                        type="monotone"
-                        dataKey="value"
-                        stroke="#eab308"
-                        activeDot={{ r: 8 }}
-                        strokeWidth={2}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-
-              {/* Feedbacks */}
-              <Card className="bg-gradient-to-br from-white to-green-50 p-6 rounded-2xl shadow-md border border-green-100/60 transition-transform hover:scale-[1.02]">
-                <h3 className="text-lg font-bold mb-4 text-green-700">
-                  Feedbacks
-                </h3>
-                <div className="space-y-4">
-                  {feedbacks.length === 0 && (
-                    <div className="text-gray-400 text-sm">
-                      No feedbacks yet.
-                    </div>
-                  )}
-                  {feedbacks.map((feedback, index) => (
+            {/* Incident Reports */}
+            <Card className="bg-gradient-to-br from-white to-red-50 p-6 rounded-2xl shadow-md border border-red-100/60 transition-transform hover:scale-[1.02]">
+              <h3 className="text-lg font-bold mb-4 text-red-700">
+                Incident Reports
+              </h3>
+              <div className="space-y-4">
+                {!studentSummary?.ai_generated_summary && (
+                  <div className="text-gray-400 text-sm">
+                    No incidents reported.
+                  </div>
+                )}
+                {studentSummary?.ai_generated_summary && (
+                  <div className="p-3 bg-red-50/60 rounded-lg shadow-sm border border-red-100">
                     <div
-                      key={index}
-                      className="p-3 bg-green-50/60 rounded-lg shadow-sm border border-green-100"
-                    >
-                      <p className="text-xs text-gray-500 mb-1"></p>
-                      <p className="text-sm text-green-800">
-                        {feedback.content}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
+                      className="text-sm text-gray-700"
+                      dangerouslySetInnerHTML={{
+                        __html: renderMarkdown(
+                          studentSummary.ai_generated_summary
+                        ),
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            </Card>
           </div>
         </main>
       </div>
