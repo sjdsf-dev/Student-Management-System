@@ -30,14 +30,60 @@ GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini
 GEMINI_MODEL = "gemini-1.5-flash"  # Fast and free model
 
 # --- Logging Configuration ---
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s %(message)s',
-    handlers=[
-        logging.FileHandler("student_summarizer.log"),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
+def setup_logging():
+    """Set up logging configuration that works in containerized environments."""
+    # Get log level from environment variable (useful for debugging)
+    log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
+    log_level = getattr(logging, log_level, logging.INFO)
+    
+    # Create formatter for consistent log format
+    formatter = logging.Formatter(
+        '%(asctime)s %(levelname)s [%(name)s] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    
+    # Always include console handler (goes to stdout for container logs)
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    handlers = [console_handler]
+    
+    # Try to add file handler if writable directory exists
+    # In your Docker setup, /tmp should be writable by the appuser
+    log_file_path = None
+    possible_log_dirs = ['/tmp', '.']  # Removed /var/log as it's typically not writable for non-root
+    
+    for log_dir in possible_log_dirs:
+        if os.path.exists(log_dir) and os.access(log_dir, os.W_OK):
+            log_file_path = os.path.join(log_dir, 'student_summarizer.log')
+            try:
+                file_handler = logging.FileHandler(log_file_path)
+                file_handler.setFormatter(formatter)
+                handlers.append(file_handler)
+                print(f"Log file will be written to: {log_file_path}")
+                break
+            except (OSError, PermissionError) as e:
+                print(f"Could not create log file at {log_file_path}: {e}")
+                continue
+    
+    if log_file_path is None:
+        print("Info: Using console logging only (recommended for containerized environments)")
+    
+    # Configure root logger
+    logging.basicConfig(
+        level=log_level,
+        handlers=handlers,
+        force=True  # Force reconfiguration if already configured
+    )
+    
+    # Reduce noise from third-party libraries in production
+    if log_level > logging.DEBUG:
+        logging.getLogger('googleapiclient.discovery').setLevel(logging.WARNING)
+        logging.getLogger('google.auth').setLevel(logging.WARNING)
+        logging.getLogger('urllib3').setLevel(logging.WARNING)
+        logging.getLogger('requests').setLevel(logging.WARNING)
+
+# Set up logging
+setup_logging()
 
 # --- Flask App Initialization ---
 app = Flask(__name__)
@@ -351,8 +397,34 @@ def get_student_summary():
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    """Health check endpoint."""
-    return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
+    """Health check endpoint optimized for Choreo."""
+    try:
+        # Basic health check
+        status = {
+            "status": "healthy",
+            "timestamp": datetime.now().isoformat(),
+            "service": "student-summarizer"
+        }
+        
+        # Optional: Add Google Sheets connectivity check
+        # Uncomment if you want health check to verify Google Sheets access
+        # try:
+        #     df = get_sheet_data()
+        #     status["google_sheets"] = "connected" if df is not None else "disconnected"
+        # except:
+        #     status["google_sheets"] = "error"
+        
+        # Optional: Add Gemini API status
+        status["gemini_configured"] = bool(GEMINI_API_KEY)
+        
+        return jsonify(status), 200
+    except Exception as e:
+        logging.error(f"Health check failed: {e}")
+        return jsonify({
+            "status": "unhealthy",
+            "timestamp": datetime.now().isoformat(),
+            "error": str(e)
+        }), 503
 
 
 @app.route('/llm_status', methods=['GET'])
