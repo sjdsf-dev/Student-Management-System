@@ -25,10 +25,28 @@ import {
   Mood,
 } from "../api/getEmployeeSummary";
 
+interface StudentSummary {
+  ai_generated_summary: string;
+  behavior_changes: string[];
+  on_time_percentage: number;
+  other_comments: string[];
+  student_name: string;
+  summary_period: {
+    end_date: string;
+    start_date: string;
+  };
+  total_days_attended: number;
+  total_weeks_recorded: number;
+  worked_without_prompts_count: number;
+}
+
 const StudentDetail = () => {
   const { id } = useParams();
   const [profile, setProfile] = useState<TraineeProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [studentSummary, setStudentSummary] = useState<StudentSummary | null>(
+    null
+  );
 
   // Fetch profile data
   useEffect(() => {
@@ -113,6 +131,56 @@ const StudentDetail = () => {
     guardian_contact_no: studentInfo?.contact_number_guardian || "",
     student_contact_no: studentInfo?.contact_number || "",
     ...studentInfo,
+  };
+
+  const getStudentSummary = async (
+    studentName: string
+  ): Promise<StudentSummary> => {
+    const response = await fetch(
+      `https://87e89eab-95e5-4c0f-8192-7ee0196e1581-dev.e1-us-east-azure.choreoapis.dev/student-management-system/summarizer/v1.0/student_summary?student_name=${encodeURIComponent(
+        studentName
+      )}`,
+      {
+        headers: {
+          accept: "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch student summary");
+    }
+
+    return response.json();
+  };
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+
+    Promise.all([
+      getTraineeProfile(Number(id)),
+      // Fetch student summary using the student name (you'll need to get this from profile first)
+      // For now, using a placeholder - you might need to adjust this based on your data structure
+      getStudentSummary(`User_${id}`),
+    ])
+      .then(([profileData, summaryData]) => {
+        setProfile(profileData);
+        setStudentSummary(summaryData);
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+        // Handle error as needed
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  const renderMarkdown = (text: string) => {
+    // Simple markdown-like rendering - you might want to use a proper markdown library
+    return text
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.*?)\*/g, "<em>$1</em>")
+      .replace(/\n/g, "<br/>");
   };
 
   // Set feedbacks to remarks from student info
@@ -213,27 +281,23 @@ const StudentDetail = () => {
                   Incident Reports
                 </h3>
                 <div className="space-y-4">
-                  {incidentReports.length === 0 && (
+                  {!studentSummary?.ai_generated_summary && (
                     <div className="text-gray-400 text-sm">
                       No incidents reported.
                     </div>
                   )}
-                  {incidentReports.map((incident, index) => (
-                    <div
-                      key={index}
-                      className="p-3 bg-red-50/60 rounded-lg shadow-sm border border-red-100"
-                    >
-                      <p className="text-xs text-gray-500 mb-1">
-                        {incident.date} | {incident.time} | {incident.type}
-                      </p>
-                      <p className="text-sm font-semibold text-red-800">
-                        Issue: {incident.issue}
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        Resolution: {incident.resolution}
-                      </p>
+                  {studentSummary?.ai_generated_summary && (
+                    <div className="p-3 bg-red-50/60 rounded-lg shadow-sm border border-red-100">
+                      <div
+                        className="text-sm text-gray-700"
+                        dangerouslySetInnerHTML={{
+                          __html: renderMarkdown(
+                            studentSummary.ai_generated_summary
+                          ),
+                        }}
+                      />
                     </div>
-                  ))}
+                  )}
                 </div>
               </Card>
 
