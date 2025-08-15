@@ -244,7 +244,7 @@ const Index = () => {
               </h3>
               <ul className="mt-4 space-y-2">
                 <li className="text-gray-600">Email: contact@sjdsf.org</li>
-                <li className="text-gray-600">Phone: +1 6179597583</li>
+                <li className="text-gray-600">Phone: 0112 819 310</li>
               </ul>
             </div>
           </div>
