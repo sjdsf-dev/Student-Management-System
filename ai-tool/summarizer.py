@@ -8,6 +8,7 @@ import requests
 import os
 import sys
 from typing import Dict, Optional
+import json
 
 # Suppress numpy warnings at startup
 import warnings
@@ -24,10 +25,12 @@ SHEET_NAME = 'Sheet1'
 # The range of data to retrieve
 RANGE_NAME = f'{SHEET_NAME}!A:H'
 
+
 # LLM Configuration (using Google Gemini API)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")  # Set this environment variable
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent"
 GEMINI_MODEL = "gemini-1.5-flash"  # Fast and free model
+
 
 # --- Logging Configuration ---
 def setup_logging():
@@ -94,8 +97,9 @@ def get_sheet_data():
     """Retrieves data from the Google Sheet."""
     try:
         logging.info("Attempting to retrieve data from Google Sheet.")
-        creds = Credentials.from_service_account_file(
-            SERVICE_ACCOUNT_FILE, scopes=['https://www.googleapis.com/auth/spreadsheets.readonly'])
+        creds = Credentials.from_service_account_info(json.loads(os.environ["GOOGLE_CREDENTIALS"]),
+        scopes=['https://www.googleapis.com/auth/spreadsheets.readonly']
+)
         service = build('sheets', 'v4', credentials=creds)
         sheet = service.spreadsheets()
         result = sheet.values().get(spreadsheetId=SPREADSHEET_ID,
