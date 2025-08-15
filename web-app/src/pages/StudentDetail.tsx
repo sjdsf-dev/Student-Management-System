@@ -162,7 +162,7 @@ const StudentDetail = () => {
       getTraineeProfile(Number(id)),
       // Fetch student summary using the student name (you'll need to get this from profile first)
       // For now, using a placeholder - you might need to adjust this based on your data structure
-      getStudentSummary(`User_${id}`),
+      getStudentSummary(employee.name),
     ])
       .then(([profileData, summaryData]) => {
         setProfile(profileData);
