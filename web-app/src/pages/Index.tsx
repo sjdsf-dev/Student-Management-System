@@ -167,7 +167,7 @@ const Index = () => {
                 Student Management
               </h3>
               <p className="text-gray-600">
-                Easily manage and track employee information, performance, and
+                Easily manage and track student information, performance, and
                 development.
               </p>
             </div>
@@ -189,9 +189,7 @@ const Index = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 Mood Analytics
               </h3>
-              <p className="text-gray-600">
-                Track employee well-being and engagement levels.
-              </p>
+              <p className="text-gray-600">Track student well-being.</p>
             </div>
           </div>
         </div>
@@ -217,22 +215,26 @@ const Index = () => {
               </h3>
               <ul className="mt-4 space-y-2">
                 <li>
-                  <Link
-                    to="/dashboard"
+                  <a
+                    href="https://www.sjdsf.lk/"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-gray-600 hover:text-blue-600 transition-colors inline-flex items-center gap-2"
                   >
                     <Globe className="w-4 h-4" />
                     Our Website
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link
-                    to="/student-management"
+                  <a
+                    href="/https://www.facebook.com/sjdsfsl"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-gray-600 hover:text-blue-600 transition-colors inline-flex items-center gap-2"
                   >
                     <Facebook className="w-4 h-4" />
                     Facebook
-                  </Link>
+                  </a>
                 </li>
               </ul>
             </div>

@@ -300,9 +300,7 @@ const StudentDetail = () => {
                       key={index}
                       className="p-3 bg-green-50/60 rounded-lg shadow-sm border border-green-100"
                     >
-                      <p className="text-xs text-gray-500 mb-1">
-                        {feedback.date} | {feedback.time} | {feedback.type}
-                      </p>
+                      <p className="text-xs text-gray-500 mb-1"></p>
                       <p className="text-sm text-green-800">
                         {feedback.content}
                       </p>

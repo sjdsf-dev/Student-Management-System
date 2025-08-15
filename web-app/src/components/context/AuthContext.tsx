@@ -46,68 +46,6 @@ const getUserInfo = async (): Promise<UserInfo | null> => {
 
   return null;
 };
-// Utility functions for user info persistence
-// const storeUserInfo = (userInfo: UserInfo): void => {
-//   const userInfoString = JSON.stringify(userInfo);
-//   localStorage.setItem("userInfo", userInfoString);
-//   sessionStorage.setItem("userInfo", userInfoString);
-// };
-
-// const getStoredUserInfo = (): UserInfo | null => {
-//   // Try localStorage first
-//   let userInfo = localStorage.getItem("userInfo");
-//   if (userInfo) {
-//     try {
-//       return JSON.parse(userInfo);
-//     } catch {
-//       // If parsing fails, remove corrupted data
-//       localStorage.removeItem("userInfo");
-//     }
-//   }
-
-//   // Try sessionStorage as fallback
-//   userInfo = sessionStorage.getItem("userInfo");
-//   if (userInfo) {
-//     try {
-//       return JSON.parse(userInfo);
-//     } catch {
-//       // If parsing fails, remove corrupted data
-//       sessionStorage.removeItem("userInfo");
-//     }
-//   }
-
-//   return null;
-// };
-
-// const clearStoredUserInfo = (): void => {
-//   localStorage.removeItem("userInfo");
-//   sessionStorage.removeItem("userInfo");
-// };
-
-// Main function to get user info from any available source
-// const getUserInfo = async (): Promise<UserInfo | null> => {
-//   // First, check if we have stored user info
-//   let userInfo = getStoredUserInfo();
-//   if (userInfo) {
-//     return userInfo;
-//   }
-
-//   // If not in storage, try cookie
-//   userInfo = getUserInfoFromCookie();
-//   if (userInfo) {
-//     storeUserInfo(userInfo);
-//     return userInfo;
-//   }
-
-//   // If not in cookie, try endpoint
-//   userInfo = await getUserInfoFromEndpoint();
-//   if (userInfo) {
-//     storeUserInfo(userInfo);
-//     return userInfo;
-//   }
-
-//   return null;
-// };
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<UserInfo | null>(null);
