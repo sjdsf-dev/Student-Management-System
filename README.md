@@ -211,10 +211,6 @@ Configure your environment variables for different deployment stages:
 
 For technical support or questions, please contact the development team or create an issue in the repository.
 
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE) - see the LICENSE file for details.
-
 ---
 
 **Note**: Make sure to update configuration files and environment variables according to your deployment environment before running the applications.
